@@ -107,6 +107,9 @@ class LIM_Admin {
 		?>
 		<div class="wrap lim-admin-wrap">
 			<h1><?php esc_html_e( 'Lead Intake Manager', 'lead-intake-manager' ); ?></h1>
+			<p class="description">
+				<?php esc_html_e( 'Review recent lead submissions and update their follow-up status.', 'lead-intake-manager' ); ?>
+			</p>
 
 			<?php if ( ! empty( $_GET['lim_updated'] ) ) : ?>
 				<div class="notice notice-success is-dismissible">
@@ -117,28 +120,33 @@ class LIM_Admin {
 			<table class="widefat fixed striped lim-leads-table">
 				<thead>
 					<tr>
-						<th><?php esc_html_e( 'Name', 'lead-intake-manager' ); ?></th>
-						<th><?php esc_html_e( 'Email', 'lead-intake-manager' ); ?></th>
-						<th><?php esc_html_e( 'Phone', 'lead-intake-manager' ); ?></th>
-						<th><?php esc_html_e( 'Service', 'lead-intake-manager' ); ?></th>
-						<th><?php esc_html_e( 'Notes', 'lead-intake-manager' ); ?></th>
-						<th><?php esc_html_e( 'Status', 'lead-intake-manager' ); ?></th>
-						<th><?php esc_html_e( 'Submitted', 'lead-intake-manager' ); ?></th>
+						<th class="lim-col-contact"><?php esc_html_e( 'Contact', 'lead-intake-manager' ); ?></th>
+						<th class="lim-col-service"><?php esc_html_e( 'Service Needed', 'lead-intake-manager' ); ?></th>
+						<th class="lim-col-notes"><?php esc_html_e( 'Notes', 'lead-intake-manager' ); ?></th>
+						<th class="lim-col-status"><?php esc_html_e( 'Status', 'lead-intake-manager' ); ?></th>
+						<th class="lim-col-submitted"><?php esc_html_e( 'Submitted', 'lead-intake-manager' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
 					<?php if ( empty( $leads ) ) : ?>
 						<tr>
-							<td colspan="7"><?php esc_html_e( 'No leads submitted yet.', 'lead-intake-manager' ); ?></td>
+							<td colspan="5" class="lim-empty-state">
+								<strong><?php esc_html_e( 'No leads yet.', 'lead-intake-manager' ); ?></strong>
+								<span><?php esc_html_e( 'Lead submissions will appear here after someone uses the intake form.', 'lead-intake-manager' ); ?></span>
+							</td>
 						</tr>
 					<?php else : ?>
 						<?php foreach ( $leads as $lead ) : ?>
 							<tr>
-								<td><?php echo esc_html( $lead['name'] ); ?></td>
-								<td><a href="mailto:<?php echo esc_attr( $lead['email'] ); ?>"><?php echo esc_html( $lead['email'] ); ?></a></td>
-								<td><?php echo esc_html( $lead['phone'] ); ?></td>
+								<td>
+									<strong><?php echo esc_html( $lead['name'] ); ?></strong>
+									<div><a href="<?php echo esc_url( 'mailto:' . $lead['email'] ); ?>"><?php echo esc_html( $lead['email'] ); ?></a></div>
+									<?php if ( '' !== $lead['phone'] ) : ?>
+										<div class="lim-muted"><?php echo esc_html( $lead['phone'] ); ?></div>
+									<?php endif; ?>
+								</td>
 								<td><?php echo esc_html( $lead['service_needed'] ); ?></td>
-								<td><?php echo esc_html( wp_trim_words( $lead['notes'], 18 ) ); ?></td>
+								<td><?php echo esc_html( $this->format_notes( $lead['notes'] ) ); ?></td>
 								<td><?php $this->render_status_form( $lead ); ?></td>
 								<td><?php echo esc_html( mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $lead['created_at'] ) ); ?></td>
 							</tr>
@@ -156,21 +164,55 @@ class LIM_Admin {
 	 * @param array $lead Lead row.
 	 */
 	private function render_status_form( $lead ) {
+		$current_status = in_array( $lead['status'], LIM_DB::get_statuses(), true ) ? $lead['status'] : 'new';
 		?>
 		<form method="post" class="lim-status-form">
 			<?php wp_nonce_field( 'lim_update_status', 'lim_status_nonce' ); ?>
 			<input type="hidden" name="lead_id" value="<?php echo esc_attr( $lead['id'] ); ?>">
+			<span class="lim-status-badge lim-status-<?php echo esc_attr( $current_status ); ?>">
+				<?php echo esc_html( $this->format_status_label( $current_status ) ); ?>
+			</span>
 			<select name="lead_status">
 				<?php foreach ( LIM_DB::get_statuses() as $status ) : ?>
-					<option value="<?php echo esc_attr( $status ); ?>" <?php selected( $lead['status'], $status ); ?>>
-						<?php echo esc_html( ucfirst( $status ) ); ?>
+					<option value="<?php echo esc_attr( $status ); ?>" <?php selected( $current_status, $status ); ?>>
+						<?php echo esc_html( $this->format_status_label( $status ) ); ?>
 					</option>
 				<?php endforeach; ?>
 			</select>
 			<button class="button button-small" type="submit" name="lim_update_status" value="1">
-				<?php esc_html_e( 'Update', 'lead-intake-manager' ); ?>
+				<?php esc_html_e( 'Save', 'lead-intake-manager' ); ?>
 			</button>
 		</form>
 		<?php
+	}
+
+	/**
+	 * Format notes for table display.
+	 *
+	 * @param string $notes Lead notes.
+	 * @return string
+	 */
+	private function format_notes( $notes ) {
+		if ( '' === trim( $notes ) ) {
+			return __( 'No notes provided.', 'lead-intake-manager' );
+		}
+
+		return wp_trim_words( $notes, 18 );
+	}
+
+	/**
+	 * Format a status slug for display.
+	 *
+	 * @param string $status Status slug.
+	 * @return string
+	 */
+	private function format_status_label( $status ) {
+		$labels = array(
+			'new'       => __( 'New', 'lead-intake-manager' ),
+			'contacted' => __( 'Contacted', 'lead-intake-manager' ),
+			'closed'    => __( 'Closed', 'lead-intake-manager' ),
+		);
+
+		return isset( $labels[ $status ] ) ? $labels[ $status ] : __( 'New', 'lead-intake-manager' );
 	}
 }

@@ -7,10 +7,76 @@
 	vertical-align: top;
 }
 
+.lim-col-contact {
+	width: 24%;
+}
+
+.lim-col-service {
+	width: 18%;
+}
+
+.lim-col-status,
+.lim-col-submitted {
+	width: 16%;
+}
+
+.lim-muted {
+	color: #646970;
+}
+
+.lim-empty-state {
+	padding: 28px 16px;
+	text-align: center;
+}
+
+.lim-empty-state strong,
+.lim-empty-state span {
+	display: block;
+}
+
+.lim-empty-state strong {
+	margin-bottom: 4px;
+	color: #1d2327;
+	font-size: 14px;
+}
+
+.lim-empty-state span {
+	color: #646970;
+}
+
 .lim-status-form {
 	display: flex;
+	flex-wrap: wrap;
 	gap: 6px;
 	align-items: center;
+}
+
+.lim-status-badge {
+	display: inline-block;
+	min-width: 74px;
+	padding: 3px 8px;
+	border-radius: 999px;
+	background: #f0f0f1;
+	color: #3c434a;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.5;
+	text-align: center;
+}
+
+.lim-status-new {
+	background: #e7f5ff;
+	color: #0a4b78;
+}
+
+.lim-status-contacted {
+	background: #fcf9e8;
+	color: #755100;
+}
+
+.lim-status-closed {
+	background: #edfaef;
+	color: #006b25;
 }
 
 .lim-status-form select {
