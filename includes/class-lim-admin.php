@@ -14,6 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LIM_Admin {
 	/**
+	 * Capability required to manage leads.
+	 */
+	const CAPABILITY = 'manage_options';
+
+	/**
 	 * Menu hook suffix.
 	 *
 	 * @var string
@@ -36,7 +41,7 @@ class LIM_Admin {
 		$this->hook_suffix = add_menu_page(
 			__( 'Lead Intake', 'lead-intake-manager' ),
 			__( 'Lead Intake', 'lead-intake-manager' ),
-			'manage_options',
+			self::CAPABILITY,
 			'lead-intake-manager',
 			array( $this, 'render_page' ),
 			'dashicons-feedback',
@@ -70,7 +75,7 @@ class LIM_Admin {
 			return;
 		}
 
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! current_user_can( self::CAPABILITY ) ) {
 			wp_die( esc_html__( 'You do not have permission to update leads.', 'lead-intake-manager' ) );
 		}
 
@@ -81,13 +86,13 @@ class LIM_Admin {
 		$lead_id = isset( $_POST['lead_id'] ) ? absint( $_POST['lead_id'] ) : 0;
 		$status  = isset( $_POST['lead_status'] ) ? sanitize_key( wp_unslash( $_POST['lead_status'] ) ) : '';
 
-		LIM_DB::update_status( $lead_id, $status );
+		$updated = LIM_DB::update_status( $lead_id, $status );
 
 		wp_safe_redirect(
 			add_query_arg(
 				array(
 					'page'        => 'lead-intake-manager',
-					'lim_updated' => '1',
+					'lim_notice'  => $updated ? 'updated' : 'invalid_status',
 				),
 				admin_url( 'admin.php' )
 			)
@@ -99,7 +104,7 @@ class LIM_Admin {
 	 * Render the admin page.
 	 */
 	public function render_page() {
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! current_user_can( self::CAPABILITY ) ) {
 			return;
 		}
 
@@ -111,11 +116,7 @@ class LIM_Admin {
 				<?php esc_html_e( 'Review recent lead submissions and update their follow-up status.', 'lead-intake-manager' ); ?>
 			</p>
 
-			<?php if ( ! empty( $_GET['lim_updated'] ) ) : ?>
-				<div class="notice notice-success is-dismissible">
-					<p><?php esc_html_e( 'Lead status updated.', 'lead-intake-manager' ); ?></p>
-				</div>
-			<?php endif; ?>
+			<?php $this->render_admin_notice(); ?>
 
 			<table class="widefat fixed striped lim-leads-table">
 				<thead>
@@ -164,18 +165,18 @@ class LIM_Admin {
 	 * @param array $lead Lead row.
 	 */
 	private function render_status_form( $lead ) {
-		$current_status = in_array( $lead['status'], LIM_DB::get_statuses(), true ) ? $lead['status'] : 'new';
+		$current_status = LIM_DB::is_valid_status( $lead['status'] ) ? $lead['status'] : 'new';
 		?>
 		<form method="post" class="lim-status-form">
 			<?php wp_nonce_field( 'lim_update_status', 'lim_status_nonce' ); ?>
 			<input type="hidden" name="lead_id" value="<?php echo esc_attr( $lead['id'] ); ?>">
 			<span class="lim-status-badge lim-status-<?php echo esc_attr( $current_status ); ?>">
-				<?php echo esc_html( $this->format_status_label( $current_status ) ); ?>
+				<?php echo esc_html( LIM_DB::get_status_label( $current_status ) ); ?>
 			</span>
 			<select name="lead_status">
 				<?php foreach ( LIM_DB::get_statuses() as $status ) : ?>
 					<option value="<?php echo esc_attr( $status ); ?>" <?php selected( $current_status, $status ); ?>>
-						<?php echo esc_html( $this->format_status_label( $status ) ); ?>
+						<?php echo esc_html( LIM_DB::get_status_label( $status ) ); ?>
 					</option>
 				<?php endforeach; ?>
 			</select>
@@ -184,6 +185,34 @@ class LIM_Admin {
 			</button>
 		</form>
 		<?php
+	}
+
+	/**
+	 * Render admin result notices.
+	 */
+	private function render_admin_notice() {
+		if ( empty( $_GET['lim_notice'] ) ) {
+			return;
+		}
+
+		$notice = sanitize_key( wp_unslash( $_GET['lim_notice'] ) );
+
+		if ( 'updated' === $notice ) {
+			?>
+			<div class="notice notice-success is-dismissible">
+				<p><?php esc_html_e( 'Lead status updated.', 'lead-intake-manager' ); ?></p>
+			</div>
+			<?php
+			return;
+		}
+
+		if ( 'invalid_status' === $notice ) {
+			?>
+			<div class="notice notice-error is-dismissible">
+				<p><?php esc_html_e( 'Lead status could not be updated.', 'lead-intake-manager' ); ?></p>
+			</div>
+			<?php
+		}
 	}
 
 	/**
@@ -200,19 +229,4 @@ class LIM_Admin {
 		return wp_trim_words( $notes, 18 );
 	}
 
-	/**
-	 * Format a status slug for display.
-	 *
-	 * @param string $status Status slug.
-	 * @return string
-	 */
-	private function format_status_label( $status ) {
-		$labels = array(
-			'new'       => __( 'New', 'lead-intake-manager' ),
-			'contacted' => __( 'Contacted', 'lead-intake-manager' ),
-			'closed'    => __( 'Closed', 'lead-intake-manager' ),
-		);
-
-		return isset( $labels[ $status ] ) ? $labels[ $status ] : __( 'New', 'lead-intake-manager' );
-	}
 }

@@ -19,7 +19,42 @@ class LIM_DB {
 	 * @return string[]
 	 */
 	public static function get_statuses() {
-		return array( 'new', 'contacted', 'closed' );
+		return array_keys( self::get_status_labels() );
+	}
+
+	/**
+	 * Get display labels for lead statuses.
+	 *
+	 * @return string[]
+	 */
+	public static function get_status_labels() {
+		return array(
+			'new'       => __( 'New', 'lead-intake-manager' ),
+			'contacted' => __( 'Contacted', 'lead-intake-manager' ),
+			'closed'    => __( 'Closed', 'lead-intake-manager' ),
+		);
+	}
+
+	/**
+	 * Validate a status value.
+	 *
+	 * @param string $status Status slug.
+	 * @return bool
+	 */
+	public static function is_valid_status( $status ) {
+		return in_array( $status, self::get_statuses(), true );
+	}
+
+	/**
+	 * Get a display label for a status.
+	 *
+	 * @param string $status Status slug.
+	 * @return string
+	 */
+	public static function get_status_label( $status ) {
+		$labels = self::get_status_labels();
+
+		return isset( $labels[ $status ] ) ? $labels[ $status ] : $labels['new'];
 	}
 
 	/**
@@ -121,7 +156,7 @@ class LIM_DB {
 	public static function update_status( $lead_id, $status ) {
 		global $wpdb;
 
-		if ( ! in_array( $status, self::get_statuses(), true ) ) {
+		if ( ! self::is_valid_status( $status ) || ! $lead_id ) {
 			return false;
 		}
 
