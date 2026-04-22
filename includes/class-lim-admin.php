@@ -31,6 +31,7 @@ class LIM_Admin {
 	public function register_hooks() {
 		add_action( 'admin_menu', array( $this, 'add_menu_page' ) );
 		add_action( 'admin_init', array( $this, 'handle_status_update' ) );
+		add_action( 'admin_init', array( $this, 'handle_csv_export' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 	}
 
@@ -101,6 +102,50 @@ class LIM_Admin {
 	}
 
 	/**
+	 * Export current leads as a CSV file.
+	 */
+	public function handle_csv_export() {
+		if ( empty( $_GET['lim_export'] ) || 'csv' !== sanitize_key( wp_unslash( $_GET['lim_export'] ) ) ) {
+			return;
+		}
+
+		if ( ! current_user_can( self::CAPABILITY ) ) {
+			wp_die( esc_html__( 'You do not have permission to export leads.', 'lead-intake-manager' ) );
+		}
+
+		check_admin_referer( 'lim_export_leads_csv' );
+
+		$filename = 'lead-intake-export-' . gmdate( 'Y-m-d' ) . '.csv';
+		$leads    = LIM_DB::get_leads( 200 );
+
+		nocache_headers();
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+
+		$output = fopen( 'php://output', 'w' );
+
+		fputcsv( $output, array( 'Name', 'Email', 'Phone', 'Service Needed', 'Notes', 'Status', 'Submitted' ) );
+
+		foreach ( $leads as $lead ) {
+			fputcsv(
+				$output,
+				array(
+					$lead['name'],
+					$lead['email'],
+					$lead['phone'],
+					$lead['service_needed'],
+					$lead['notes'],
+					LIM_DB::get_status_label( $lead['status'] ),
+					$lead['created_at'],
+				)
+			);
+		}
+
+		fclose( $output );
+		exit;
+	}
+
+	/**
 	 * Render the admin page.
 	 */
 	public function render_page() {
@@ -111,10 +156,18 @@ class LIM_Admin {
 		$leads = LIM_DB::get_leads();
 		?>
 		<div class="wrap lim-admin-wrap">
-			<h1><?php esc_html_e( 'Lead Intake Manager', 'lead-intake-manager' ); ?></h1>
-			<p class="description">
-				<?php esc_html_e( 'Review recent lead submissions and update their follow-up status.', 'lead-intake-manager' ); ?>
-			</p>
+			<div class="lim-admin-header">
+				<div>
+					<h1><?php esc_html_e( 'Lead Intake Manager', 'lead-intake-manager' ); ?></h1>
+					<p class="description">
+						<?php esc_html_e( 'Review recent lead submissions and update their follow-up status.', 'lead-intake-manager' ); ?>
+					</p>
+				</div>
+
+				<a class="button button-secondary" href="<?php echo esc_url( $this->get_export_url() ); ?>">
+					<?php esc_html_e( 'Export CSV', 'lead-intake-manager' ); ?>
+				</a>
+			</div>
 
 			<?php $this->render_admin_notice(); ?>
 
@@ -213,6 +266,23 @@ class LIM_Admin {
 			</div>
 			<?php
 		}
+	}
+
+	/**
+	 * Build a nonce-protected CSV export URL.
+	 *
+	 * @return string
+	 */
+	private function get_export_url() {
+		$url = add_query_arg(
+			array(
+				'page'       => 'lead-intake-manager',
+				'lim_export' => 'csv',
+			),
+			admin_url( 'admin.php' )
+		);
+
+		return wp_nonce_url( $url, 'lim_export_leads_csv' );
 	}
 
 	/**

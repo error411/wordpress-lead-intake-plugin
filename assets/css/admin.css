@@ -2,6 +2,18 @@
 	max-width: 1200px;
 }
 
+.lim-admin-header {
+	display: flex;
+	gap: 16px;
+	align-items: flex-start;
+	justify-content: space-between;
+	margin-bottom: 16px;
+}
+
+.lim-admin-header h1 {
+	margin-bottom: 4px;
+}
+
 .lim-leads-table th,
 .lim-leads-table td {
 	vertical-align: top;
