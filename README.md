@@ -1,63 +1,62 @@
 # WP Lead Intake Manager
 
-WP Lead Intake Manager is a small, interview-friendly WordPress plugin that adds a frontend lead intake form and a simple admin screen for reviewing submissions.
+WP Lead Intake Manager is a lightweight WordPress plugin for collecting service inquiries from a public page and managing those leads inside the WordPress admin.
 
-The goal is to demonstrate practical plugin development: shortcode rendering, form handling, nonce checks, sanitization, escaping, a custom database table, activation and uninstall hooks, and a modular file structure.
+It provides a shortcode-based intake form, stores submissions in a custom database table, and gives site administrators a simple lead review screen with status tracking. The project is intentionally small and practical: it focuses on the kind of plugin architecture, security practices, and WordPress APIs used in real client work.
+
+## Why I Built This
+
+Many small business WordPress sites need more than a contact form, but less than a full CRM. This plugin demonstrates how I would build that middle layer: a maintainable custom plugin that captures structured lead data, validates submissions, and gives admins a clear workflow for follow-up.
+
+The goal was to show practical WordPress development beyond theme edits, while keeping the codebase easy to explain, extend, and review.
 
 ## Features
 
-- Frontend shortcode: `[lead_intake_form]`
-- Lead fields:
-  - Name
-  - Email
-  - Phone
-  - Service needed
-  - Notes
-- Submission handling through `admin-post.php`
-- Nonce verification before processing form data
-- Input sanitization and validation
-- Custom database table created with `dbDelta()`
-- Admin menu page for viewing submitted leads
-- Basic lead status workflow:
-  - New
-  - Contacted
-  - Closed
+- Frontend lead intake form via `[lead_intake_form]`
+- Fields for name, email, phone, service needed, and notes
+- Required-field validation and email validation
+- Nonce-protected form submission through `admin-post.php`
+- Sanitized input and escaped output
+- Custom leads table created on activation
+- Admin menu page for reviewing submitted leads
+- Lead statuses: `new`, `contacted`, and `closed`
 - Minimal public and admin CSS
-- Cleanup on uninstall
+- Uninstall cleanup for plugin-owned data
 
-## WordPress Concepts Used
+## WordPress Concepts Demonstrated
 
-- Plugin headers and bootstrap constants
+- Plugin bootstrap file and WordPress plugin headers
 - Activation hook with `register_activation_hook()`
-- Uninstall cleanup via `uninstall.php`
-- Shortcodes with `add_shortcode()`
-- Form submission actions with `admin_post_*`
-- Nonces with `wp_nonce_field()` and `wp_verify_nonce()`
+- Uninstall cleanup with `uninstall.php`
+- Shortcode registration with `add_shortcode()`
+- Frontend form handling with `admin_post_*` actions
+- Nonce generation and verification
 - Capability checks with `current_user_can()`
-- Database operations with `$wpdb`
-- Table creation with `dbDelta()`
-- Escaping output with functions like `esc_html()`, `esc_attr()`, and `esc_url()`
-- Sanitizing input with functions like `sanitize_text_field()`, `sanitize_email()`, and `sanitize_textarea_field()`
+- Custom database table creation with `dbDelta()`
+- Database reads and writes with `$wpdb`
+- Input sanitization with WordPress sanitization helpers
+- Output escaping with `esc_html()`, `esc_attr()`, and `esc_url()`
+- Modular class-based plugin organization
 
 ## Installation
 
-1. Copy this folder into your local WordPress install under:
+1. Copy this folder into your local WordPress install:
 
    ```text
    wp-content/plugins/wordpress-lead-intake-plugin
    ```
 
-2. In the WordPress admin, go to **Plugins** and activate **WP Lead Intake Manager**.
+2. Activate **WP Lead Intake Manager** from the WordPress Plugins screen.
 
-3. Create or edit a page and add:
+3. Add the shortcode to any page:
 
    ```text
    [lead_intake_form]
    ```
 
-4. Visit that page and submit a test lead.
+4. Submit a test lead from the frontend page.
 
-5. In the WordPress admin menu, open **Lead Intake** to view and update submitted leads.
+5. Open **Lead Intake** in the WordPress admin to view and update lead statuses.
 
 ## Project Structure
 
@@ -78,18 +77,8 @@ README.md
 
 ## Roadmap
 
-- Add pagination and search to the admin table
-- Add CSV export for leads
-- Add configurable notification emails
-- Add optional service choices in plugin settings
-- Add more granular capabilities for non-admin staff users
-
-## Notes for Interview Discussion
-
-This MVP intentionally avoids extra dependencies and heavy abstractions. The code is organized by responsibility so each part is easy to explain:
-
-- `LIM_Shortcode` renders the public form
-- `LIM_Form_Handler` validates and saves submissions
-- `LIM_DB` owns table creation and database queries
-- `LIM_Admin` renders the admin list and status updates
-- `LIM_Activator` handles activation-time setup
+- Add pagination and search to the admin lead table
+- Add optional email notifications for new leads
+- Add CSV export for submitted leads
+- Add a settings screen for service options
+- Add custom capabilities for non-admin staff users
