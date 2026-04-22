@@ -1,0 +1,18 @@
+.lim-admin-wrap {
+	max-width: 1200px;
+}
+
+.lim-leads-table th,
+.lim-leads-table td {
+	vertical-align: top;
+}
+
+.lim-status-form {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+}
+
+.lim-status-form select {
+	max-width: 130px;
+}

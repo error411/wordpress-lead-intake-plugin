@@ -1,0 +1,63 @@
+.lim-form-wrap {
+	max-width: 640px;
+}
+
+.lim-form {
+	display: grid;
+	gap: 16px;
+}
+
+.lim-field {
+	margin: 0;
+}
+
+.lim-field label {
+	display: block;
+	margin-bottom: 6px;
+	font-weight: 600;
+}
+
+.lim-field input,
+.lim-field textarea {
+	box-sizing: border-box;
+	width: 100%;
+	padding: 10px 12px;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	font: inherit;
+}
+
+.lim-actions {
+	margin: 0;
+}
+
+.lim-actions button {
+	padding: 10px 16px;
+	border: 0;
+	border-radius: 4px;
+	background: #1d2327;
+	color: #fff;
+	cursor: pointer;
+	font: inherit;
+	font-weight: 600;
+}
+
+.lim-actions button:hover,
+.lim-actions button:focus {
+	background: #2c3338;
+}
+
+.lim-notice {
+	margin-bottom: 16px;
+	padding: 10px 12px;
+	border-left: 4px solid #646970;
+	background: #f6f7f7;
+}
+
+.lim-notice-success {
+	border-left-color: #00a32a;
+}
+
+.lim-notice-error {
+	border-left-color: #d63638;
+}
